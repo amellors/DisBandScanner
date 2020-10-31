@@ -54,7 +54,7 @@
 DoubleResetDetector* drd = NULL;
 
 #include "wifi_manager.h"
-#include "config_manager.h"
+#include "filesystem_manager.h"
 
 // Setup function
 void setup()
@@ -71,7 +71,7 @@ void setup()
 
   Serial.setDebugOutput(false);
   
-  ConfigManager::getManager().process_setup();
+  FSManager::getManager().process_setup();
 
   drd = new DoubleResetDetector(DRD_TIMEOUT, DRD_ADDRESS);
 

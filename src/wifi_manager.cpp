@@ -64,7 +64,8 @@ WM_Config         WM_config;
 #define LED_OFF           LOW
 #define USE_DHCP_IP     true
 
-#include "config_manager.h"
+#include "filesystem_manager.h"
+#include "config_server.h"
 
 /*static*/
 WifiManager &
@@ -76,12 +77,12 @@ WifiManager::getManager()
 
 void loadConfigData(void)
 {
-  ConfigManager::getManager().readData(CONFIG_FILENAME, (char *)&WM_config, sizeof(WM_config));
+  FSManager::getManager().readData(CONFIG_FILENAME, (char *)&WM_config, sizeof(WM_config));
 }
     
 void saveConfigData(void)
 {
-  ConfigManager::getManager().writeData(CONFIG_FILENAME, (char *)&WM_config, sizeof(WM_config));
+  FSManager::getManager().writeData(CONFIG_FILENAME, (char *)&WM_config, sizeof(WM_config));
 }
 
 static void wifi_manager(bool forceSetup)
@@ -163,7 +164,7 @@ static void wifi_manager(bool forceSetup)
   // No CP => stored getSSID() = ""
   if ( String(ESP_wifiManager.getSSID(0)) != "" || String(ESP_wifiManager.getSSID(1)) != "" )
   {
-    Serial.println(F("Attempting to save entered credentials: "));
+    // Serial.println(F("Attempting to save entered credentials: "));
     // Stored  for later usage, from v1.1.0, but clear first
     memset(&WM_config, 0, sizeof(WM_config));
     
@@ -176,7 +177,7 @@ static void wifi_manager(bool forceSetup)
         // Only save & Add if SSID != null and Password is of valid size (> 8)
         if (tempSSID != "" && strlen(tempPW.c_str()) >= MIN_AP_PASSWORD_SIZE) {
             credentialsToSave = true;
-            LOGERROR2(F("SSID = "),  WM_config.WiFi_Creds[i].wifi_ssid, " is ok to save");
+            LOGINFO2(F("SSID = "),  WM_config.WiFi_Creds[i].wifi_ssid, " is ok to save");
 
             if (strlen(tempSSID.c_str()) < sizeof(WM_config.WiFi_Creds[i].wifi_ssid) - 1)
                 strcpy(WM_config.WiFi_Creds[i].wifi_ssid, tempSSID.c_str());
@@ -225,7 +226,7 @@ void WifiManager::process_setup(bool forceSetup)
       // Don't permit NULL SSID and password len < MIN_AP_PASSWORD_SIZE (8)
       if ( (String(WM_config.WiFi_Creds[i].wifi_ssid) != "") && (strlen(WM_config.WiFi_Creds[i].wifi_pw) >= MIN_AP_PASSWORD_SIZE) )
       {
-        LOGERROR2(F("* Add SSID = "), WM_config.WiFi_Creds[i].wifi_ssid, F(", PW = ******") );
+        LOGINFO2(F("* Add SSID = "), WM_config.WiFi_Creds[i].wifi_ssid, F(", PW = ******") );
         wifiMulti.addAP(WM_config.WiFi_Creds[i].wifi_ssid, WM_config.WiFi_Creds[i].wifi_pw);
         initialConfig = false;
       }
@@ -328,7 +329,7 @@ uint8_t WifiManager::int_connectMultiWiFi()
     // Don't permit NULL SSID and password len < MIN_AP_PASSWORD_SIZE (8)
     if ( (String(WM_config.WiFi_Creds[i].wifi_ssid) != "") && (strlen(WM_config.WiFi_Creds[i].wifi_pw) >= MIN_AP_PASSWORD_SIZE) )
     {
-      LOGERROR2(F("* Additional SSID = "), WM_config.WiFi_Creds[i].wifi_ssid, F(", PW = ***** "));
+      LOGINFO2(F("* Additional SSID = "), WM_config.WiFi_Creds[i].wifi_ssid, F(", PW = ***** "));
     }
   }
   
@@ -363,8 +364,9 @@ uint8_t WifiManager::int_connectMultiWiFi()
   if ( status == WL_CONNECTED )
   {
     LOGERROR1(F("WiFi connected after time: "), i);
-    LOGERROR3(F("SSID:"), WiFi.SSID(), F(",RSSI="), WiFi.RSSI());
-    LOGERROR3(F("Channel:"), WiFi.channel(), F(",IP address:"), WiFi.localIP() );
+    LOGINFO3(F("SSID:"), WiFi.SSID(), F(",RSSI="), WiFi.RSSI());
+    LOGINFO1(F("Channel:"), WiFi.channel());
+    LOGERROR1(F("IP address:"), WiFi.localIP());
   }
   else
     LOGERROR(F("WiFi not connected"));
@@ -382,10 +384,9 @@ void WifiManager::int_heartBeatPrint()
 {
   static int num = 1;
 
-  if (WiFi.status() == WL_CONNECTED)
-    Serial.print(F("W"));        // W means connected to WiFi
-  else
+  if (WiFi.status() != WL_CONNECTED) {
     Serial.print(F("N"));        // N means not connected to WiFi
+  }
 
   if (num == 40)
   {
@@ -399,5 +400,6 @@ void WifiManager::int_heartBeatPrint()
 }
 
 void WifiManager::int_startServices() {
-    m_services_not_started = false;
+  ConfigServer::getConfigServer().startServer();
+  m_services_not_started = false;
 }
