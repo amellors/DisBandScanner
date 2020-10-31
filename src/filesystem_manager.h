@@ -1,24 +1,24 @@
 /****************** Disney Ball Scanner ******************
  *
- * config_manager.h
+ * filesystem_manager.h
  *
 *********************************************************/
 
-#ifndef _CONFIG_MANAGER_H
-#define _CONFIG_MANAGER_H
+#ifndef _FILESYSTEM_MANAGER_H
+#define _FILESYSTEM_MANAGER_H
 
 #include <Arduino.h>
 
-class ConfigManager
+class FSManager
 {
 public:
-    static ConfigManager &getManager();
+    static FSManager &getManager();
 
     void process_setup();
 
-    class ConfigSerilizer {
+    class FileSystemSerilizer {
         public:
-            virtual ~ConfigSerilizer();
+            virtual ~FileSystemSerilizer();
 
     };
 
@@ -30,9 +30,8 @@ public:
     bool writeData(const String& path);
 
 private:
-    ConfigManager() = default;
-    ~ConfigManager() = default;
-
+    FSManager() = default;
+    ~FSManager() = default;
 };
 
 #endif

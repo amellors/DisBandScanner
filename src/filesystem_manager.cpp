@@ -1,10 +1,10 @@
 /****************** Disney Ball Scanner ******************
  *
- * config_manager.cpp
+ * filesystem_manager.cpp
  *
 *********************************************************/
 
-#include "config_manager.h"
+#include "filesystem_manager.h"
 
 
 #include <SPIFFS.h>
@@ -13,15 +13,15 @@
 #define GLOBAL_ForceFormat     false
 
 // static
-ConfigManager &
-ConfigManager::getManager() 
+FSManager &
+FSManager::getManager() 
 {
-    static ConfigManager instance;
+    static FSManager instance;
     return instance;
 }
 
 void
-ConfigManager::process_setup()
+FSManager::process_setup()
 {
 
     if(GLOBAL_ForceFormat) {
@@ -37,7 +37,7 @@ ConfigManager::process_setup()
 }
 
 bool
-ConfigManager::readData(const String& path, char *data, size_t length)
+FSManager::readData(const String& path, char *data, size_t length)
 {
     File file = FileFS.open(path, "r");
     
@@ -53,7 +53,7 @@ ConfigManager::readData(const String& path, char *data, size_t length)
 }
 
 bool
-ConfigManager::writeData(const String& path, const char *data, const size_t length)
+FSManager::writeData(const String& path, const char *data, const size_t length)
 {
     File file = FileFS.open(path, "w");
 
@@ -68,14 +68,14 @@ ConfigManager::writeData(const String& path, const char *data, const size_t leng
 }
     
 bool
-ConfigManager::readData(const String& path)
+FSManager::readData(const String& path)
 {
     
     return false;
 }
 
 bool
-ConfigManager::writeData(const String& path)
+FSManager::writeData(const String& path)
 {
     
     return false;
