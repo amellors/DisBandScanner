@@ -55,6 +55,7 @@ DoubleResetDetector* drd = NULL;
 
 #include "wifi_manager.h"
 #include "filesystem_manager.h"
+#include "nfc_manager.h"
 
 // Setup function
 void setup()
@@ -91,6 +92,7 @@ void setup()
   }
 
   WifiManager::getManager().process_setup(forceSetup);
+  NfcManager::getManager().process_setup();
 }
 
 // Loop function
