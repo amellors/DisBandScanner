@@ -13,64 +13,17 @@
 #include <Arduino.h>            // for button
 #include <OneButton.h>          // for button
 
-#include <FS.h>
-
 // Now support ArduinoJson 6.0.0+ ( tested with v6.15.2 to v6.16.1 )
 #include <ArduinoJson.h>        // get it from https://arduinojson.org/ or install via Arduino library manager
 
 //For ESP32, To use ESP32 Dev Module, QIO, Flash 4MB/80MHz, Upload 921600
 //Ported to ESP32
 #ifdef ESP32
-
-  #define USE_SPIFFS      true
-
-  #if USE_SPIFFS
-    #include <SPIFFS.h>
-    #define FileFS        SPIFFS
-    #define FS_Name       "SPIFFS"
-  #else
-    // Use FFat
-    #include <FFat.h>
-    FS* filesystem =      &FFat;
-    #define FileFS        FFat
-    #define FS_Name       "FFat"
-  #endif
-  //////
-
   #define ESP_getChipId()   ((uint32_t)ESP.getEfuseMac())
 
   #define LED_BUILTIN       2
   #define LED_ON            HIGH
   #define LED_OFF           LOW
-
-#else
-#include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
-  //needed for library
-  #include <DNSServer.h>
-  #include <ESP8266WebServer.h>
-
-  // From v1.1.0
-  #include <ESP8266WiFiMulti.h>
-  ESP8266WiFiMulti wifiMulti;
-
-  #define USE_LITTLEFS      true
-  
-  #if USE_LITTLEFS
-    #include <LittleFS.h>
-    FS* filesystem = &LittleFS;
-    #define FileFS    LittleFS
-    #define FS_Name       "LittleFS"
-  #else
-    FS* filesystem = &SPIFFS;
-    #define FileFS    SPIFFS
-    #define FS_Name       "SPIFFS"
-  #endif
-  //////
-  
-  #define ESP_getChipId()   (ESP.getChipId())
-  
-  #define LED_ON      LOW
-  #define LED_OFF     HIGH
 #endif
 
 // These defines must be put before #include <ESP_DoubleResetDetector.h>
@@ -79,36 +32,12 @@
 // For ESP8266, You must select one to be true (RTC, EEPROM, SPIFFS or LITTLEFS)
 // Otherwise, library will use default EEPROM storage
 #ifdef ESP32
-
   // These defines must be put before #include <ESP_DoubleResetDetector.h>
   // to select where to store DoubleResetDetector's variable.
   // For ESP32, You must select one to be true (EEPROM or SPIFFS)
   // Otherwise, library will use default EEPROM storage
-  #if USE_SPIFFS
-    #define ESP_DRD_USE_SPIFFS      true
-    #define ESP_DRD_USE_EEPROM      false
-  #else
-    #define ESP_DRD_USE_SPIFFS      false
-    #define ESP_DRD_USE_EEPROM      true
-  #endif
-  
-#else //ESP8266
-  
-  // For DRD
-  // These defines must be put before #include <ESP_DoubleResetDetector.h>
-  // to select where to store DoubleResetDetector's variable.
-  // For ESP8266, You must select one to be true (RTC, EEPROM, SPIFFS or LITTLEFS)
-  // Otherwise, library will use default EEPROM storage
-  #if USE_LITTLEFS
-    #define ESP_DRD_USE_LITTLEFS    true
-    #define ESP_DRD_USE_SPIFFS      false
-  #else
-    #define ESP_DRD_USE_LITTLEFS    false
-    #define ESP_DRD_USE_SPIFFS      true
-  #endif
-    
+  #define ESP_DRD_USE_SPIFFS      true
   #define ESP_DRD_USE_EEPROM      false
-  #define ESP8266_DRD_USE_RTC     false
 #endif
  
 #define DOUBLERESETDETECTOR_DEBUG       true  //false
@@ -125,8 +54,7 @@
 DoubleResetDetector* drd = NULL;
 
 #include "wifi_manager.h"
-
-WifiManager g_wifi_manager;
+#include "config_manager.h"
 
 // Setup function
 void setup()
@@ -138,37 +66,12 @@ void setup()
   Serial.begin(115200);
   while (!Serial);
 
-  Serial.print("\nStarting ConfigOnDRD_FS_MQTT_Ptr using " + String(FS_Name));
+  Serial.print("\nStarting DisBallScanner");
   Serial.println(" on " + String(ARDUINO_BOARD));
 
   Serial.setDebugOutput(false);
-
-  // Mount the filesystem
-  if (false)
-  {
-    Serial.println(F("Forced Formatting."));
-    FileFS.format();
-  }
-
-  // Format FileFS if not yet
-#ifdef ESP32
-  if (!FileFS.begin(true))
-#else
-  if (!FileFS.begin())
-#endif  
-  {
-    Serial.print(FS_Name);
-    Serial.println(F(" failed! AutoFormatting."));
-    
-#ifdef ESP8266
-    FileFS.format();
-#endif
-  }
   
-  /*if (!readConfigFile())
-  {
-    Serial.println(F("Can't read Config File, using default values"));
-  }*/
+  ConfigManager::getManager().process_setup();
 
   drd = new DoubleResetDetector(DRD_TIMEOUT, DRD_ADDRESS);
 
@@ -187,7 +90,7 @@ void setup()
     forceSetup = true;
   }
 
-  g_wifi_manager.process_setup(forceSetup);
+  WifiManager::getManager().process_setup(forceSetup);
 }
 
 // Loop function
@@ -201,5 +104,5 @@ void loop()
     drd->loop();
 
   // this is just for checking if we are connected to WiFi
-  g_wifi_manager.process_loop();  //  check_status();
+  WifiManager::getManager().process_loop();  //  check_status();
 }

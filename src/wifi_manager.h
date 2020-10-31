@@ -12,9 +12,7 @@
 class WifiManager
 {
 public:
-    WifiManager() = default;
-    ~WifiManager() = default;
-
+    static WifiManager &getManager();
     void process_setup(bool forceSetup);
     void process_loop();
 
@@ -26,6 +24,10 @@ private:
     void int_startServices();
 
     bool m_services_not_started;
+
+    
+    WifiManager() = default;
+    ~WifiManager() = default;
 };
 
 #endif //_WIFI_MANAGER_H

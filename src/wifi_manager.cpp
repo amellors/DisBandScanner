@@ -14,7 +14,7 @@
 #include <FS.h>
 
 // Use from 0 to 4. Higher number, more debugging messages and memory usage.
-#define _WIFIMGR_LOGLEVEL_    3
+#define _WIFIMGR_LOGLEVEL_    1
 
 #define USING_CORS_FEATURE          true
 #include <ESP_WiFiManager.h>
@@ -64,42 +64,24 @@ WM_Config         WM_config;
 #define LED_OFF           LOW
 #define USE_DHCP_IP     true
 
-#include <SPIFFS.h>
-#define FileFS        SPIFFS
-extern File file;
+#include "config_manager.h"
+
+/*static*/
+WifiManager &
+WifiManager::getManager()
+{
+  static WifiManager instance;
+  return instance;
+}
 
 void loadConfigData(void)
 {
-  File file = FileFS.open(CONFIG_FILENAME, "r");
-  LOGERROR(F("LoadWiFiCfgFile "));
-
-  if (file)
-  {
-    file.readBytes((char *) &WM_config, sizeof(WM_config));
-    file.close();
-    LOGERROR(F("OK"));
-  }
-  else
-  {
-    LOGERROR(F("failed"));
-  }
+  ConfigManager::getManager().readData(CONFIG_FILENAME, (char *)&WM_config, sizeof(WM_config));
 }
     
 void saveConfigData(void)
 {
-  File file = FileFS.open(CONFIG_FILENAME, "w");
-  LOGERROR(F("SaveWiFiCfgFile "));
-
-  if (file)
-  {
-    file.write((uint8_t*) &WM_config, sizeof(WM_config));
-    file.close();
-    LOGERROR(F("OK"));
-  }
-  else
-  {
-    LOGERROR(F("failed"));
-  }
+  ConfigManager::getManager().writeData(CONFIG_FILENAME, (char *)&WM_config, sizeof(WM_config));
 }
 
 static void wifi_manager(bool forceSetup)
