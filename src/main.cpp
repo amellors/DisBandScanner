@@ -7,9 +7,6 @@
   #error This code is intended to run on the ESP8266 or ESP32 platform! Please check your Tools->Board setting.
 #endif
 
-// Use from 0 to 4. Higher number, more debugging messages and memory usage.
-#define _WIFIMGR_LOGLEVEL_    3
-
 #include <Arduino.h>            // for button
 #include <OneButton.h>          // for button
 
@@ -57,6 +54,31 @@ DoubleResetDetector* drd = NULL;
 #include "filesystem_manager.h"
 #include "nfc_manager.h"
 
+#include <NeoPixelBus.h>
+#include <NeoPixelAnimator.h>
+
+#include <SPI.h>
+#include <SD.h>
+#include <Adafruit_VS1053.h>
+
+// These are the pins used
+#define VS1053_RESET   -1     // VS1053 reset pin (not used!)
+
+  #define VS1053_CS      32     // VS1053 chip select pin (output)
+  #define VS1053_DCS     33     // VS1053 Data/command select pin (output)
+  #define CARDCS         14     // Card chip select pin
+  #define VS1053_DREQ    15     // VS1053 Data request, ideally an Interrupt pin
+
+const uint16_t PixelCount = 16; // make sure to set this to the number of pixels in your strip
+const uint8_t PixelPin = 2;  // make sure to set this to the correct pin, ignored for Esp8266
+const RgbColor CylonEyeColor(HtmlColor(0x7f0000));
+
+// NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
+// for esp8266 omit the pin
+//NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount);
+
+// NeoPixelAnimator animations(2); // only ever need 2 animations
+
 // Setup function
 void setup()
 {
@@ -73,7 +95,8 @@ void setup()
   Serial.setDebugOutput(false);
   
   FSManager::getManager().process_setup();
-
+  NfcManager::getManager().process_setup();
+  
   drd = new DoubleResetDetector(DRD_TIMEOUT, DRD_ADDRESS);
 
   bool forceSetup = false;
@@ -90,9 +113,9 @@ void setup()
     Serial.println(F("Open Config Portal without Timeout: Double Reset Detected"));
     forceSetup = true;
   }
+  
 
   WifiManager::getManager().process_setup(forceSetup);
-  NfcManager::getManager().process_setup();
 }
 
 // Loop function
@@ -105,6 +128,6 @@ void loop()
   if (drd)
     drd->loop();
 
-  // this is just for checking if we are connected to WiFi
-  WifiManager::getManager().process_loop();  //  check_status();
+  WifiManager::getManager().process_loop(); 
+  NfcManager::getManager().process_loop();
 }
