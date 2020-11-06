@@ -11,6 +11,8 @@
 #include <SPI.h>
 #include <Adafruit_PN532.h>
 
+#include "scan_processor.h"
+
 // If using the breakout with SPI, define the pins for SPI communication.
 #define PN532_SS   (4)
 
@@ -58,25 +60,18 @@ NfcManager::process_setup()
     nfc.SAMConfig();
 }
 
-#define NFC_SCAN_PAUSE    1500L
-#define NFC_SCAN_TIMEOUT  50000L
-
 void
 NfcManager::process_loop()
 {
     ulong current_millis = millis();
     
     bool success = false;
-    if (!m_nfc_scanned) {
-        success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, m_scanned_uid, &m_scanned_uidLength);
+    if (m_can_scan) {
+        success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, m_scanned_uid, &m_scanned_uidLength,50);
     }
 
     if(success){
-        Serial.println("Found an ISO14443A card");
-        Serial.print("  UID Length: ");Serial.print(m_scanned_uidLength, DEC);Serial.println(" bytes");
-        Serial.print("  UID Value: ");
-        nfc.PrintHex(m_scanned_uid, m_scanned_uidLength);
-        
+        m_can_scan = false;
         if (m_scanned_uidLength == 4)
         {
             // We probably have a Mifare Classic card ... 
@@ -87,17 +82,36 @@ NfcManager::process_loop()
             cardid |= m_scanned_uid[2];  
             cardid <<= 8;
             cardid |= m_scanned_uid[3]; 
-            Serial.print("Seems to be a Mifare Classic card #");
-            Serial.println(cardid);
         }
-        Serial.println("");
 
-        m_nfc_scanned = true;
-        m_nfc_scan_pause = current_millis + NFC_SCAN_PAUSE;
+        ScanProcessor *processor = new ScanProcessor(   int_createStringFromUid(),
+                                                        [processor, this]()
+                                                        {
+                                                            delete processor;
+                                                            m_can_scan = true;
+                                                            Serial.println("Callback finished, should be able to scan...");
+                                                        });
+        processor->start_processing();
+    }
+}
+
+String
+NfcManager::int_createStringFromUid()
+{
+    String uidStr;
+
+    uint32_t szPos;
+    for (szPos = 0; szPos < m_scanned_uidLength; szPos++) {
+        if (szPos > 0) {
+            uidStr += ':';
+        }
+
+        char buff[3];    
+        snprintf(buff, sizeof(buff), "%02x", m_scanned_uid[szPos]);
+        uidStr += buff;
     }
 
-    if (m_nfc_scanned && current_millis > m_nfc_scan_pause )
-    {
-        m_nfc_scanned = false;
-    }
+    Serial.println("Done Creating: " + uidStr);
+
+    return uidStr;
 }

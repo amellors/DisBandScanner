@@ -43,7 +43,7 @@
 
 // Number of seconds after reset during which a
 // subseqent reset will be considered a double reset.
-#define DRD_TIMEOUT 10
+#define DRD_TIMEOUT 3
 
 // RTC Memory Address for the DoubleResetDetector to use
 #define DRD_ADDRESS 0
@@ -73,11 +73,11 @@ const uint16_t PixelCount = 16; // make sure to set this to the number of pixels
 const uint8_t PixelPin = 2;  // make sure to set this to the correct pin, ignored for Esp8266
 const RgbColor CylonEyeColor(HtmlColor(0x7f0000));
 
-// NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
 // for esp8266 omit the pin
-//NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount);
+// NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount);
 
-// NeoPixelAnimator animations(2); // only ever need 2 animations
+NeoPixelAnimator animations(2); // only ever need 2 animations
 
 // Setup function
 void setup()
@@ -96,7 +96,7 @@ void setup()
   
   FSManager::getManager().process_setup();
   NfcManager::getManager().process_setup();
-  
+
   drd = new DoubleResetDetector(DRD_TIMEOUT, DRD_ADDRESS);
 
   bool forceSetup = false;

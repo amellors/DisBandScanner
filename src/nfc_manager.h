@@ -16,8 +16,7 @@ public:
 private:
     uint8_t m_scanned_uid[7];  // Buffer to store the returned UID
     uint8_t m_scanned_uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+    String int_createStringFromUid();
   
-    ulong   m_nfc_scan_timeout = 0;
-    bool    m_nfc_scanned = false;
-    ulong   m_nfc_scan_pause;
+    bool    m_can_scan = true;
 };
